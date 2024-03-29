@@ -52,7 +52,7 @@ MT-User-Tag: 0
 Accept: */*
 MT-Network-Type: WIFI
 MT-Token: 1
-MT-Team-ID: 
+MT-Team-ID: 1
 MT-Info: 028e7f96f6369cafe1d105579c5b9377
 MT-Device-ID: 2F2075D0-B66C-4287-A903-DBFF6358342A
 MT-Bundle-ID: com.moutai.mall
@@ -111,7 +111,7 @@ def login(mobile: str, v_code: str):
     md5 = signature(params)
     dict.update(params, {'md5': md5, "timestamp": CURRENT_TIME, 'MT-APP-Version': mt_version})
     responses = requests.post("https://app.moutai519.com.cn/xhr/front/user/register/login", json=params,
-                              headers=headers)
+                              headers=headers, timeout=10)
     if responses.status_code != 200:
         logging.info(
             f'login : params : {params}, response code : {responses.status_code}, response body : {responses.text}')
@@ -251,6 +251,25 @@ def send_msg(title, content):
                                   'title': title,
                                   'content': content})
     logging.info(f'通知推送结果：{r.status_code, r.text}')
+
+
+# 发送企业微信消息
+def send_wechat_message(title, content):
+    if config.PUSH_TOKEN is None:
+        return
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "msgtype": "text",
+        "text": {
+            "content": title + content
+        }
+    }
+    webhook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=" + config.PUSH_TOKEN
+    response = requests.post(webhook_url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        logging.info(f'通知推送结果：{response.status_code, response.text}')
+    else:
+        logging.info(f"发送推送结果失败, 状态码: {response.status_code}")
 
 
 # 核心代码，执行预约
